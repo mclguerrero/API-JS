@@ -1,3 +1,5 @@
+// swaggerConfig.js
+
 const swaggerJSDoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 
@@ -26,7 +28,6 @@ const swaggerDocs = (app, port) => {
     res.setHeader('Content-Type', 'application/json');
     res.send(swaggerSpec);
   });
-  console.log(`Version 1 Docs are available on http://localhost:${port}/api/v1/docs`);
 };
 
 module.exports = { swaggerDocs };

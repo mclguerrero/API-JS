@@ -1,19 +1,23 @@
 //usuariosRouter.js 
-
 const express = require('express');
 const router = express.Router();
+const { validarUsuario, upload } = require('../middlewares/usuariosMiddlewar');
+const { login } = require('../controllers/authController');
+
 const {
-  obtenerUsuarios,
-  obtenerUsuarioPorId,
-  crearUsuario,
-  actualizarUsuario,
-  eliminarUsuario,
-  obtenerFotoPerfil,
-  actualizarFotoPerfil,
-  eliminarFotoPerfil
+  obtenerUsuariosController,
+  obtenerUsuarioPorIdController,
+  crearUsuarioController,
+  actualizarUsuarioController,
+  eliminarUsuarioController,
+  obtenerFotoPerfilController,
+  actualizarFotoPerfilController,
+  eliminarFotoPerfilController
 } = require('../controllers/usuariosController');
-const { validarUsuario } = require('../middlewares/usuariosMiddlewar');
-const { upload } = require('../middlewares/usuariosMiddlewar');
+
+
+//USUARIOS
+
 
 /**
  * @openapi
@@ -100,7 +104,8 @@ const { upload } = require('../middlewares/usuariosMiddlewar');
  *                   isActivo:
  *                     type: integer
  */
-router.get('/usuarios', obtenerUsuarios);
+router.get('/usuarios', obtenerUsuariosController);
+
 // Obtener un usuario por ID
 /**
  * @openapi
@@ -147,7 +152,8 @@ router.get('/usuarios', obtenerUsuarios);
  *                 isActivo:
  *                   type: integer
  */
-router.get('/usuarios/:id', obtenerUsuarioPorId);
+router.get('/usuarios/:id', obtenerUsuarioPorIdController);
+
 // Crear un nuevo usuario
 /**
  * @openapi
@@ -177,10 +183,6 @@ router.get('/usuarios/:id', obtenerUsuarioPorId);
  *                 type: string
  *               pass:
  *                 type: string
- *               photo:
- *                 type: string
- *               isActivo:
- *                 type: integer
  *     responses:
  *       201:
  *         description: Usuario creado
@@ -192,7 +194,7 @@ router.get('/usuarios/:id', obtenerUsuarioPorId);
  *                 id:
  *                   type: integer
  */
-router.post('/usuarios', validarUsuario, crearUsuario);
+router.post('/usuarios', validarUsuario, crearUsuarioController);
 
 // Actualizar un usuario por ID
 /**
@@ -244,7 +246,8 @@ router.post('/usuarios', validarUsuario, crearUsuario);
  *                 message:
  *                   type: string
  */
-router.put('/usuarios/:id', actualizarUsuario);
+router.put('/usuarios/:id', actualizarUsuarioController);
+
 // Eliminar un usuario por ID
 /**
  * @openapi
@@ -270,7 +273,8 @@ router.put('/usuarios/:id', actualizarUsuario);
  *                 message:
  *                   type: string
  */
-router.delete('/usuarios/:id', eliminarUsuario);
+router.delete('/usuarios/:id', eliminarUsuarioController);
+
 // Eliminar usuario por ID
 /**
  * @openapi
@@ -294,7 +298,7 @@ router.delete('/usuarios/:id', eliminarUsuario);
  *       '500':
  *         description: Error interno del servidor
  */
-router.delete('/usuarios/:id', eliminarUsuario);
+router.delete('/usuarios/:id', eliminarUsuarioController);
 
 
 //FOTO DE PERFIL
@@ -307,7 +311,7 @@ router.delete('/usuarios/:id', eliminarUsuario);
  *   get:
  *     summary: Obtener foto de perfil de usuario por ID
  *     tags:
- *       - Usuarios
+ *       - Foto De Perfil
  *     parameters:
  *       - in: path
  *         name: id
@@ -323,7 +327,7 @@ router.delete('/usuarios/:id', eliminarUsuario);
  *       '500':
  *         description: Error interno del servidor
  */
-router.get('/usuarios/:id/foto', obtenerFotoPerfil);
+router.get('/usuarios/:id/foto', obtenerFotoPerfilController);
 
 // Actualizar la foto de perfil de un usuario por ID
 /**
@@ -332,7 +336,7 @@ router.get('/usuarios/:id/foto', obtenerFotoPerfil);
  *   put:
  *     summary: Actualizar foto de perfil de usuario por ID
  *     tags:
- *       - Usuarios
+ *       - Foto De Perfil
  *     parameters:
  *       - in: path
  *         name: id
@@ -355,7 +359,7 @@ router.get('/usuarios/:id/foto', obtenerFotoPerfil);
  *       '500':
  *         description: Error interno del servidor
  */
-router.put('/usuarios/:id/foto', upload, actualizarFotoPerfil);
+router.put('/usuarios/:id/foto', upload, actualizarFotoPerfilController);
 
 // Eliminar la foto de perfil de un usuario por ID
 /**
@@ -364,7 +368,7 @@ router.put('/usuarios/:id/foto', upload, actualizarFotoPerfil);
  *   delete:
  *     summary: Eliminar foto de perfil de usuario por ID
  *     tags:
- *       - Usuarios
+ *       - Foto De Perfil
  *     parameters:
  *       - in: path
  *         name: id
@@ -380,6 +384,44 @@ router.put('/usuarios/:id/foto', upload, actualizarFotoPerfil);
  *       '500':
  *         description: Error interno del servidor
  */
-router.delete('/usuarios/:id/foto', eliminarFotoPerfil);
+router.delete('/usuarios/:id/foto', eliminarFotoPerfilController);
 
+//LOGIN
+
+/**
+ * @openapi
+ * /api/v1/login:
+ *   post:
+ *     tags:
+ *       - Autenticación
+ *     summary: Iniciar sesión
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: juan.perez@example.com
+ *               pass:
+ *                 type: string
+ *                 example: "password123"
+ *     responses:
+ *       200:
+ *         description: Inicio de sesión exitoso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 token:
+ *                   type: string
+ *       401:
+ *         description: Correo electrónico o contraseña incorrectos
+ *       500:
+ *         description: Error interno del servidor
+ */
+router.post('/login', login);
 module.exports = router;

@@ -1,156 +1,171 @@
-//usuariosController.js
+// usuariosController.js
 
-const {
-  getAllUsers,
-  getUserById,
-  createUser,
-  updateUser,
-  deleteUser,
-  updateProfilePhoto,
-  deleteProfilePhoto
-} = require('../models/usuariosModel');
-
-const { upload } = require('../middlewares/usuariosMiddlewar');
-const multer = require('multer');
-const defaultPhoto = 'icon.jpg';
+const { validationResult } = require('express-validator');
 const path = require('path');
 const fs = require('fs');
+const { connectToDatabase } = require('../../../db');
+const bcrypt = require('bcrypt');
+const { obtenerUsuarios, obtenerUsuarioPorId, crearUsuario, actualizarUsuario, eliminarUsuario, obtenerFotoPerfil, actualizarFotoPerfil, eliminarFotoPerfil } = require('../models/usuariosModel'); // Importar funciones del modelo
+
+const defaultPhoto = 'icon.jpg';
+
 // Obtener todos los usuarios
-const obtenerUsuarios = async (req, res) => {
+const obtenerUsuariosController = async (req, res) => {
+  let connection;
   try {
-    const usuarios = await getAllUsers();
+    connection = await connectToDatabase();
+    const usuarios = await obtenerUsuarios();
     res.json(usuarios);
   } catch (error) {
-    res.status(500).json({ error });
+    console.error('Error al obtener todos los usuarios:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  } finally {
+    if (connection) {
+      connection.end();
+    }
   }
 };
 
 // Obtener un usuario por ID
-const obtenerUsuarioPorId = async (req, res) => {
+const obtenerUsuarioPorIdController = async (req, res) => {
   const { id } = req.params;
+  let connection;
   try {
-    const usuario = await getUserById(id);
+    connection = await connectToDatabase();
+    const usuario = await obtenerUsuarioPorId(id);
+    if (!usuario) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
     res.json(usuario);
   } catch (error) {
-    res.status(500).json({ error });
+    console.error('Error al obtener el usuario por ID:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  } finally {
+    if (connection) {
+      connection.end();
+    }
   }
 };
 
 // Crear un nuevo usuario
-const crearUsuario = async (req, res) => {
+const crearUsuarioController = async (req, res) => {
+  const { nombres, apellidos, tipoDocumento_id, nroDocumento, celular, email, pass } = req.body;
+  let connection;
   try {
-    const newUser = await createUser(req.body);
-    res.status(201).json(newUser);
+    connection = await connectToDatabase();
+    const hashedPassword = await bcrypt.hash(pass, 10);
+    const userId = await crearUsuario(nombres, apellidos, tipoDocumento_id, nroDocumento, celular, email, hashedPassword);
+    res.status(201).json({ message: 'Usuario creado correctamente', id: userId });
   } catch (error) {
-    res.status(500).json({ error });
+    console.error('Error al crear el usuario:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  } finally {
+    if (connection) {
+      connection.end();
+    }
   }
 };
 
-// Actualizar un usuario por ID
-const actualizarUsuario = async (req, res) => {
+// Actualizar un usuario
+const actualizarUsuarioController = async (req, res) => {
   const { id } = req.params;
+  const { nombres, apellidos, tipoDocumento_id, nroDocumento, celular, email, pass, photo, isActivo } = req.body;
+  let connection;
   try {
-    const message = await updateUser(id, req.body);
-    res.json(message);
+    connection = await connectToDatabase();
+    await actualizarUsuario(id, nombres, apellidos, tipoDocumento_id, nroDocumento, celular, email, pass, photo, isActivo);
+    res.json({ message: 'Usuario actualizado correctamente' });
   } catch (error) {
-    res.status(500).json({ error });
+    console.error('Error al actualizar el usuario:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  } finally {
+    if (connection) {
+      connection.end();
+    }
   }
 };
 
-// Eliminar un usuario por ID
-const eliminarUsuario = async (req, res) => {
+// Eliminar un usuario
+const eliminarUsuarioController = async (req, res) => {
   const { id } = req.params;
+  let connection;
   try {
-    const message = await deleteUser(id);
-    res.json(message);
+    connection = await connectToDatabase();
+    await eliminarUsuario(id);
+    res.json({ message: 'Usuario eliminado correctamente' });
   } catch (error) {
-    res.status(500).json({ error });
+    console.error('Error al eliminar el usuario:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  } finally {
+    if (connection) {
+      connection.end();
+    }
   }
 };
-
-// FOTO DE PERFIL
 
 // Obtener la foto de perfil de un usuario por ID
-const obtenerFotoPerfil = async (req, res) => {
+const obtenerFotoPerfilController = async (req, res) => {
   const { id } = req.params;
+  let connection;
   try {
-    const usuario = await getUserById(id);
-    if (!usuario) {
-      return res.status(404).json({ message: 'Usuario no encontrado' });
-    }
-
-    const photoPath = usuario.photo || defaultPhoto;
+    connection = await connectToDatabase();
+    const photoPath = await obtenerFotoPerfil(id);
     const photoURL = `${req.protocol}://${req.get('host')}/uploads/photosProfile/${photoPath}`;
-
     res.redirect(photoURL);
   } catch (error) {
-    res.status(500).json({ error });
+    console.error('Error al obtener la foto de perfil:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  } finally {
+    if (connection) {
+      connection.end();
+    }
   }
 };
+
 // Actualizar foto de perfil de un usuario
-const actualizarFotoPerfil = async (req, res) => {
+const actualizarFotoPerfilController = async (req, res) => {
   const { id } = req.params;
   const photo = req.file;
-
+  let connection;
   try {
-    // Verificar que el usuario exista antes de actualizar la foto de perfil
-    const usuario = await getUserById(id);
-    if (!usuario) {
-      return res.status(404).json({ message: 'Usuario no encontrado' });
-    }
-
-    // Obtener la ruta de la foto anterior del usuario si no es la predeterminada
-    if (usuario.photo && usuario.photo !== defaultPhoto) {
-      const oldPhotoPath = path.join(__dirname, '..', '..', '..', 'uploads', 'photosProfile', usuario.photo);
-      if (fs.existsSync(oldPhotoPath)) {
-        fs.unlinkSync(oldPhotoPath); // Eliminar la foto anterior del servidor
-      }
-    }
-
-    // Actualizar la foto de perfil en la base de datos
-    await updateProfilePhoto(id, photo.filename);
-
+    connection = await connectToDatabase();
+    await actualizarFotoPerfil(id, photo.filename);
     res.status(200).json({ message: 'Foto de perfil actualizada exitosamente' });
   } catch (error) {
     console.error('Error al actualizar la foto de perfil:', error);
-    res.status(500).json({ message: 'Error interno del servidor', error });
-  }
-};// Eliminar la foto de perfil de un usuario por ID
-const eliminarFotoPerfil = async (req, res) => {
-  const { id } = req.params;
-  try {
-    // Obtener el nombre de la foto actual del usuario
-    const usuario = await getUserById(id);
-    if (!usuario) {
-      return res.status(404).json({ message: 'Usuario no encontrado' });
+    res.status(500).json({ message: 'Error interno del servidor' });
+  } finally {
+    if (connection) {
+      connection.end();
     }
-
-    // Si la foto actual no es la predeterminada, eliminarla del servidor
-    if (usuario.photo && usuario.photo !== defaultPhoto) {
-      const photoPath = path.join(__dirname, '..', '..', '..', 'uploads', 'photosProfile', usuario.photo);
-      if (fs.existsSync(photoPath)) {
-        fs.unlinkSync(photoPath);
-      }
-    }
-
-    // Actualizar la base de datos para establecer la foto por defecto
-    await deleteProfilePhoto(id);
-
-    res.status(200).json({ message: 'Foto de perfil eliminada exitosamente' });
-  } catch (error) {
-    console.error('Error al eliminar la foto de perfil:', error);
-    res.status(500).json({ message: 'Error interno del servidor', error });
   }
 };
 
+// Eliminar foto de perfil de un usuario
+const eliminarFotoPerfilController = async (req, res) => {
+  const { id } = req.params;
+  let connection;
+  try {
+    connection = await connectToDatabase();
+    await eliminarFotoPerfil(id);
+    res.status(200).json({ message: 'Foto de perfil eliminada exitosamente' });
+  } catch (error) {
+    console.error('Error al eliminar la foto de perfil:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  } finally {
+    if (connection) {
+      connection.end();
+    }
+  }
+};
 
 module.exports = {
-  obtenerUsuarios,
-  obtenerUsuarioPorId,
-  crearUsuario,
-  actualizarUsuario,
-  eliminarUsuario,
-  obtenerFotoPerfil,
-  actualizarFotoPerfil,
-  eliminarFotoPerfil
+  obtenerUsuariosController,
+  obtenerUsuarioPorIdController,
+  crearUsuarioController,
+  actualizarUsuarioController,
+  eliminarUsuarioController,
+  obtenerFotoPerfilController,
+  actualizarFotoPerfilController,
+  eliminarFotoPerfilController
 };

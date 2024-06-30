@@ -1,71 +1,92 @@
-const connection = require('../../../db');
+// tipoDocumentoModel.js
 
-// Función para obtener todos los tipos de documentos
-const getAllDocumentTypes = () => {
-  return new Promise((resolve, reject) => {
-    connection.query('SELECT * FROM tiposdocumentos', (error, results) => {
-      if (error) {
-        return reject(error);
-      }
-      resolve(results);
-    });
-  });
+const { connectToDatabase } = require('../../../db');
+
+// Obtener todos los tipos de documentos
+const obtenerTiposDocumentos = async () => {
+  let connection;
+  try {
+    connection = await connectToDatabase();
+    const [tiposDocumentos] = await connection.execute('SELECT * FROM tiposdocumentos');
+    return tiposDocumentos;
+  } catch (error) {
+    throw new Error('Error al obtener todos los tipos de documentos desde la base de datos');
+  } finally {
+    if (connection) {
+      connection.end();
+    }
+  }
 };
 
-// Función para obtener un tipo de documento por ID
-const getDocumentTypeById = (id) => {
-  return new Promise((resolve, reject) => {
-    connection.query('SELECT * FROM tiposdocumentos WHERE id = ?', [id], (error, results) => {
-      if (error) {
-        return reject(error);
-      }
-      resolve(results[0]);
-    });
-  });
+// Obtener un tipo de documento por ID
+const obtenerTipoDocumentoPorId = async (id) => {
+  let connection;
+  try {
+    connection = await connectToDatabase();
+    const [result] = await connection.execute('SELECT * FROM tiposdocumentos WHERE id = ?', [id]);
+    if (result.length === 0) {
+      return null;
+    }
+    return result[0];
+  } catch (error) {
+    throw new Error('Error al obtener el tipo de documento por ID desde la base de datos');
+  } finally {
+    if (connection) {
+      connection.end();
+    }
+  }
 };
 
-// Función para crear un nuevo tipo de documento
-const createDocumentType = (data) => {
-  const { nombre } = data;
-  return new Promise((resolve, reject) => {
-    connection.query('INSERT INTO tiposdocumentos (nombre) VALUES (?)', [nombre], (error, results) => {
-      if (error) {
-        return reject(error);
-      }
-      resolve({ id: results.insertId });
-    });
-  });
+// Crear un nuevo tipo de documento
+const crearTipoDocumento = async (nombre) => {
+  let connection;
+  try {
+    connection = await connectToDatabase();
+    const [result] = await connection.execute('INSERT INTO tiposdocumentos (nombre) VALUES (?)', [nombre]);
+    return result.insertId;
+  } catch (error) {
+    throw new Error('Error al crear el tipo de documento en la base de datos');
+  } finally {
+    if (connection) {
+      connection.end();
+    }
+  }
 };
 
-// Función para actualizar un tipo de documento por ID
-const updateDocumentType = (id, data) => {
-  const { nombre } = data;
-  return new Promise((resolve, reject) => {
-    connection.query('UPDATE tiposdocumentos SET nombre = ? WHERE id = ?', [nombre, id], (error) => {
-      if (error) {
-        return reject(error);
-      }
-      resolve({ message: 'Tipo de documento actualizado' });
-    });
-  });
+// Actualizar un tipo de documento por ID
+const actualizarTipoDocumento = async (id, nombre) => {
+  let connection;
+  try {
+    connection = await connectToDatabase();
+    await connection.execute('UPDATE tiposdocumentos SET nombre = ? WHERE id = ?', [nombre, id]);
+  } catch (error) {
+    throw new Error('Error al actualizar el tipo de documento en la base de datos');
+  } finally {
+    if (connection) {
+      connection.end();
+    }
+  }
 };
 
-// Función para eliminar un tipo de documento por ID
-const deleteDocumentType = (id) => {
-  return new Promise((resolve, reject) => {
-    connection.query('DELETE FROM tiposdocumentos WHERE id = ?', [id], (error) => {
-      if (error) {
-        return reject(error);
-      }
-      resolve({ message: 'Tipo de documento eliminado' });
-    });
-  });
+// Eliminar un tipo de documento por ID
+const eliminarTipoDocumento = async (id) => {
+  let connection;
+  try {
+    connection = await connectToDatabase();
+    await connection.execute('DELETE FROM tiposdocumentos WHERE id = ?', [id]);
+  } catch (error) {
+    throw new Error('Error al eliminar el tipo de documento desde la base de datos');
+  } finally {
+    if (connection) {
+      connection.end();
+    }
+  }
 };
 
 module.exports = {
-  getAllDocumentTypes,
-  getDocumentTypeById,
-  createDocumentType,
-  updateDocumentType,
-  deleteDocumentType
+  obtenerTiposDocumentos,
+  obtenerTipoDocumentoPorId,
+  crearTipoDocumento,
+  actualizarTipoDocumento,
+  eliminarTipoDocumento
 };

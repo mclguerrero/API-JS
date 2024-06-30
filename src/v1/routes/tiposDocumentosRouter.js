@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const {
-  obtenerTiposDocumentos,
-  obtenerTipoDocumentoPorId,
-  crearTipoDocumento,
-  actualizarTipoDocumento,
-  eliminarTipoDocumento
+  obtenerTiposDocumentosController,
+  obtenerTipoDocumentoPorIdController,
+  crearTipoDocumentoController,
+  actualizarTipoDocumentoController,
+  eliminarTipoDocumentoController
 } = require('../controllers/tiposDocumentosController');
 const { validarTipoDocumento } = require('../middlewares/tiposDocumentosMiddlewar');
 
@@ -42,7 +42,7 @@ const { validarTipoDocumento } = require('../middlewares/tiposDocumentosMiddlewa
  *               items:
  *                 $ref: '#/components/schemas/TiposDocumentos'
  */
-router.get('/tiposdocumentos', obtenerTiposDocumentos);
+router.get('/tiposdocumentos', obtenerTiposDocumentosController);
 
 // Obtener un tipo de documento por ID
 /**
@@ -66,7 +66,7 @@ router.get('/tiposdocumentos', obtenerTiposDocumentos);
  *             schema:
  *               $ref: '#/components/schemas/TiposDocumentos'
  */
-router.get('/tiposdocumentos/:id', obtenerTipoDocumentoPorId);
+router.get('/tiposdocumentos/:id', obtenerTipoDocumentoPorIdController);
 
 // Crear un nuevo tipo de documento
 /**
@@ -90,7 +90,7 @@ router.get('/tiposdocumentos/:id', obtenerTipoDocumentoPorId);
  *             schema:
  *               $ref: '#/components/schemas/TiposDocumentos'
  */
-router.post('/tiposdocumentos', validarTipoDocumento, crearTipoDocumento);
+router.post('/tiposdocumentos', validarTipoDocumento, crearTipoDocumentoController);
 
 // Actualizar un tipo de documento por ID
 /**
@@ -120,7 +120,7 @@ router.post('/tiposdocumentos', validarTipoDocumento, crearTipoDocumento);
  *             schema:
  *               $ref: '#/components/schemas/TiposDocumentos'
  */
-router.put('/tiposdocumentos/:id', validarTipoDocumento, actualizarTipoDocumento);
+router.put('/tiposdocumentos/:id', validarTipoDocumento, actualizarTipoDocumentoController);
 
 // Eliminar un tipo de documento por ID
 /**
@@ -147,6 +147,6 @@ router.put('/tiposdocumentos/:id', validarTipoDocumento, actualizarTipoDocumento
  *                 message:
  *                   type: string
  */
-router.delete('/tiposdocumentos/:id', eliminarTipoDocumento);
+router.delete('/tiposdocumentos/:id', eliminarTipoDocumentoController);
 
 module.exports = router;

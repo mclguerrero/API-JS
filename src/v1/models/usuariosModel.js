@@ -1,130 +1,206 @@
-//usuarioModel.js 
+// usuariosModel.js
 
-const connection = require('../../../db');
+const { connectToDatabase } = require('../../../db');
 const bcrypt = require('bcrypt');
-const defaultPhoto = 'icon.jpg';
-const path = require('path');
 const fs = require('fs');
-// Función para obtener todos los usuarios
-const getAllUsers = () => {
-  return new Promise((resolve, reject) => {
-    connection.query('SELECT * FROM usuarios', (error, results) => {
-      if (error) {
-        return reject(error);
-      }
-      resolve(results);
-    });
-  });
+const defaultPhoto = 'icon.jpg';
+
+// Obtener todos los usuarios
+const obtenerUsuarios = async () => {
+  let connection;
+  try {
+    connection = await connectToDatabase();
+    const usuariosQuery = 'SELECT * FROM usuarios';
+    const [usuarios] = await connection.execute(usuariosQuery);
+    return usuarios;
+  } catch (error) {
+    throw new Error('Error al obtener todos los usuarios:', error);
+  } finally {
+    if (connection) {
+      connection.end();
+    }
+  }
 };
 
-// Función para obtener un usuario por ID
-const getUserById = (id) => {
-  return new Promise((resolve, reject) => {
-    connection.query('SELECT * FROM usuarios WHERE id = ?', [id], (error, results) => {
-      if (error) {
-        return reject(error);
-      }
-      resolve(results[0]);
-    });
-  });
+// Obtener un usuario por ID
+const obtenerUsuarioPorId = async (id) => {
+  let connection;
+  try {
+    connection = await connectToDatabase();
+    const usuarioQuery = 'SELECT * FROM usuarios WHERE id = ?';
+    const [usuario] = await connection.execute(usuarioQuery, [id]);
+    return usuario.length ? usuario[0] : null;
+  } catch (error) {
+    throw new Error('Error al obtener el usuario por ID:', error);
+  } finally {
+    if (connection) {
+      connection.end();
+    }
+  }
 };
 
-// Función para crear un nuevo usuario
-const createUser = async (userData) => {
-  const { nombres, apellidos, tipoDocumento_id, nroDocumento, celular, email, pass, isActivo } = userData;
-  const hashedPassword = await bcrypt.hash(pass, 10);
-  const photo = userData.photo || defaultPhoto; // Asignar imagen por defecto si no se proporciona ninguna
-
-  const query = 'INSERT INTO usuarios (nombres, apellidos, tipoDocumento_id, nroDocumento, celular, email, pass, photo, isActivo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
-  
-  return new Promise((resolve, reject) => {
-    connection.query(query, [nombres, apellidos, tipoDocumento_id, nroDocumento, celular, email, hashedPassword, photo, isActivo], (error, results) => {
-      if (error) {
-        return reject(error);
-      }
-      resolve({ id: results.insertId });
-    });
-  });
+// Crear un nuevo usuario
+const crearUsuario = async (nombres, apellidos, tipoDocumento_id, nroDocumento, celular, email, pass) => {
+  let connection;
+  try {
+    connection = await connectToDatabase();
+    const hashedPassword = await bcrypt.hash(pass, 10);
+    const insertQuery = 'INSERT INTO usuarios (nombres, apellidos, tipoDocumento_id, nroDocumento, celular, email, pass) VALUES (?, ?, ?, ?, ?, ?, ?)';
+    const [result] = await connection.execute(insertQuery, [nombres, apellidos, tipoDocumento_id, nroDocumento, celular, email, hashedPassword]);
+    return result.insertId;
+  } catch (error) {
+    throw new Error('Error al crear el usuario:', error);
+  } finally {
+    if (connection) {
+      connection.end();
+    }
+  }
 };
 
-// Función para actualizar un usuario por ID
-const updateUser = (id, userData) => {
-  const { nombres, apellidos, tipoDocumento_id, nroDocumento, celular, email, pass, photo, isActivo } = userData;
-  const query = 'UPDATE usuarios SET nombres = ?, apellidos = ?, tipoDocumento_id = ?, nroDocumento = ?, celular = ?, email = ?, pass = ?, photo = ?, isActivo = ? WHERE id = ?';
-
-  return new Promise((resolve, reject) => {
-    connection.query(query, [nombres, apellidos, tipoDocumento_id, nroDocumento, celular, email, pass, photo, isActivo, id], (error) => {
-      if (error) {
-        return reject(error);
-      }
-      resolve({ message: 'Usuario actualizado' });
-    });
-  });
+// Actualizar un usuario
+const actualizarUsuario = async (id, nombres, apellidos, tipoDocumento_id, nroDocumento, celular, email, pass, photo, isActivo) => {
+  let connection;
+  try {
+    connection = await connectToDatabase();
+    const updateQuery = 'UPDATE usuarios SET nombres = ?, apellidos = ?, tipoDocumento_id = ?, nroDocumento = ?, celular = ?, email = ?, pass = ?, photo = ?, isActivo = ? WHERE id = ?';
+    await connection.execute(updateQuery, [nombres, apellidos, tipoDocumento_id, nroDocumento, celular, email, pass, photo, isActivo, id]);
+  } catch (error) {
+    throw new Error('Error al actualizar el usuario:', error);
+  } finally {
+    if (connection) {
+      connection.end();
+    }
+  }
 };
 
-// Función para eliminar un usuario por ID
-const deleteUser = (id) => {
-  return new Promise((resolve, reject) => {
-    connection.query('DELETE FROM usuarios WHERE id = ?', [id], (error) => {
-      if (error) {
-        return reject(error);
-      }
-      resolve({ message: 'Usuario eliminado' });
-    });
-  });
+// Eliminar un usuario
+const eliminarUsuario = async (id) => {
+  let connection;
+  try {
+    connection = await connectToDatabase();
+    const deleteQuery = 'DELETE FROM usuarios WHERE id = ?';
+    await connection.execute(deleteQuery, [id]);
+  } catch (error) {
+    throw new Error('Error al eliminar el usuario:', error);
+  } finally {
+    if (connection) {
+      connection.end();
+    }
+  }
 };
+
+// Obtener un usuario por correo electrónico
+const ObtenerUsuarioPorEmail = async (email) => {
+  let connection;
+  try {
+    connection = await connectToDatabase();
+    const query = 'SELECT * FROM usuarios WHERE email = ?';
+    const [results] = await connection.execute(query, [email]);
+    return results.length > 0 ? results[0] : null;
+  } catch (error) {
+    throw new Error('Error al obtener el usuario por correo electrónico:', error);
+  } finally {
+    if (connection) {
+      connection.end();
+    }
+  }
+};
+
 
 // FOTO DE PERFIL
 
-// Función para obtener la foto de perfil de un usuario por ID
-const getProfilePhoto = (id) => {
-  return new Promise((resolve, reject) => {
-    connection.query('SELECT photo FROM usuarios WHERE id = ?', [id], (error, results) => {
-      if (error) {
-        return reject(error);
-      }
-      if (results.length > 0) {
-        resolve(results[0].photo || defaultPhoto); // Devolver la foto o la imagen por defecto si no hay foto
-      } else {
-        reject('Usuario no encontrado');
-      }
-    });
-  });
+// Obtener la foto de perfil de un usuario por ID
+const obtenerFotoPerfil = async (id) => {
+  let connection;
+  try {
+    connection = await connectToDatabase();
+    const usuarioQuery = 'SELECT photo FROM usuarios WHERE id = ?';
+    const [results] = await connection.execute(usuarioQuery, [id]);
+    if (results.length === 0) {
+      return null;
+    }
+    return results[0].photo || defaultPhoto;
+  } catch (error) {
+    throw new Error('Error al obtener la foto de perfil:', error);
+  } finally {
+    if (connection) {
+      connection.end();
+    }
+  }
 };
 
-// Función para actualizar la foto de perfil de un usuario por ID
-const updateProfilePhoto = (id, photoUrl) => {
-  const photo = photoUrl || defaultPhoto; // Asignar imagen por defecto si no se proporciona ninguna
+// Actualizar foto de perfil de un usuario
+const actualizarFotoPerfil = async (id, filename) => {
+  let connection;
+  try {
+    connection = await connectToDatabase();
+    const usuarioQuery = 'SELECT photo FROM usuarios WHERE id = ?';
+    const [usuarioResults] = await connection.execute(usuarioQuery, [id]);
+    if (usuarioResults.length === 0) {
+      throw new Error('Usuario no encontrado');
+    }
+    const usuario = usuarioResults[0];
 
-  return new Promise((resolve, reject) => {
-    connection.query('UPDATE usuarios SET photo = ? WHERE id = ?', [photo, id], (error) => {
-      if (error) {
-        return reject(error);
+    // Obtener la ruta de la foto anterior del usuario si no es la predeterminada
+    if (usuario.photo && usuario.photo !== defaultPhoto) {
+      const oldPhotoPath = path.join(__dirname, '..', '..', '..', 'uploads', 'photosProfile', usuario.photo);
+      if (fs.existsSync(oldPhotoPath)) {
+        fs.unlinkSync(oldPhotoPath); // Eliminar la foto anterior del servidor
       }
-      resolve({ message: 'Foto de perfil actualizada' });
-    });
-  });
+    }
+
+    // Actualizar la foto de perfil en la base de datos
+    const updateQuery = 'UPDATE usuarios SET photo = ? WHERE id = ?';
+    await connection.execute(updateQuery, [filename, id]);
+  } catch (error) {
+    throw new Error('Error al actualizar la foto de perfil:', error);
+  } finally {
+    if (connection) {
+      connection.end();
+    }
+  }
 };
 
-// Función para eliminar la foto de perfil de un usuario por ID
-const deleteProfilePhoto = (id) => {
-  return new Promise((resolve, reject) => {
-    connection.query('UPDATE usuarios SET photo = ? WHERE id = ?', [defaultPhoto, id], (error) => {
-      if (error) {
-        return reject(error);
+// Eliminar la foto de perfil de un usuario por ID
+const eliminarFotoPerfil = async (id) => {
+  let connection;
+  try {
+    connection = await connectToDatabase();
+    const usuarioQuery = 'SELECT photo FROM usuarios WHERE id = ?';
+    const [usuarioResults] = await connection.execute(usuarioQuery, [id]);
+    if (usuarioResults.length === 0) {
+      throw new Error('Usuario no encontrado');
+    }
+    const usuario = usuarioResults[0];
+
+    // Si la foto actual no es la predeterminada, eliminarla del servidor
+    if (usuario.photo && usuario.photo !== defaultPhoto) {
+      const photoPath = path.join(__dirname, '..', '..', '..', 'uploads', 'photosProfile', usuario.photo);
+      if (fs.existsSync(photoPath)) {
+        fs.unlinkSync(photoPath);
       }
-      resolve({ message: 'Foto de perfil eliminada, se restauró la imagen por defecto' });
-    });
-  });
+    }
+
+    // Actualizar la base de datos para establecer la foto por defecto
+    const updateQuery = 'UPDATE usuarios SET photo = ? WHERE id = ?';
+    await connection.execute(updateQuery, [defaultPhoto, id]);
+  } catch (error) {
+    throw new Error('Error al eliminar la foto de perfil:', error);
+  } finally {
+    if (connection) {
+      connection.end();
+    }
+  }
 };
 
 module.exports = {
-  getAllUsers,
-  getUserById,
-  createUser,
-  updateUser,
-  deleteUser,
-  getProfilePhoto,
-  updateProfilePhoto,
-  deleteProfilePhoto
+  obtenerUsuarios,
+  obtenerUsuarioPorId,
+  crearUsuario,
+  actualizarUsuario,
+  eliminarUsuario,
+  ObtenerUsuarioPorEmail,
+  obtenerFotoPerfil,
+  actualizarFotoPerfil,
+  eliminarFotoPerfil
 };

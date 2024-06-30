@@ -1,52 +1,46 @@
-//usuariosMiddlewar
+//usuariosMiddlewar.js
 
-const connection = require('../../../db');
-
-const multer = require('multer');
-const path = require('path');
 const { body, validationResult } = require('express-validator');
+const path = require('path');
+const multer = require('multer');
 
 // Middleware para validar antes de crear un usuario
 const validarUsuario = [
   body('nombres').notEmpty().withMessage('El campo nombres es obligatorio').isLength({ max: 50 }).withMessage('El campo nombres no puede exceder los 50 caracteres'),
   body('apellidos').notEmpty().withMessage('El campo apellidos es obligatorio').isLength({ max: 45 }).withMessage('El campo apellidos no puede exceder los 45 caracteres'),
-  body('tipoDocumento_id').notEmpty().withMessage('El campo tipoDocumento_id es obligatorio').isInt().withMessage('El tipoDocumento_id debe ser un número entero válido'),
-  body('nroDocumento').notEmpty().withMessage('El campo nroDocumento es obligatorio').isLength({ max: 10 }).withMessage('El campo nroDocumento no puede exceder los 10 caracteres').isNumeric().withMessage('El campo nroDocumento debe contener solo dígitos'),
+  body('tipoDocumento_id').notEmpty().withMessage('El campo tipoDocumento_id es obligatorio').isInt().withMessage('El tipoDocumento_id debe ser un número entero válido').custom(async (value) => {
+    // Verificar si el tipoDocumento_id existe en la tabla tiposdocumentos
+    const connection = req.app.locals.db;
+    const tipoDocumentoQuery = 'SELECT id FROM tiposdocumentos WHERE id = ?';
+    const [tipoDocumentoRows] = await connection.execute(tipoDocumentoQuery, [value]);
+    if (tipoDocumentoRows.length === 0) {
+      throw new Error('El tipoDocumento_id especificado no existe');
+    }
+  }),
+  body('nroDocumento').notEmpty().withMessage('El campo nroDocumento es obligatorio').isLength({ max: 10 }).withMessage('El campo nroDocumento no puede exceder los 10 caracteres').isNumeric().withMessage('El campo nroDocumento debe contener solo dígitos').custom(async (value) => {
+    // Verificar si el nroDocumento ya está registrado para otro usuario
+    const connection = req.app.locals.db;
+    const nroDocumentoQuery = 'SELECT id FROM usuarios WHERE nroDocumento = ?';
+    const [nroDocumentoRows] = await connection.execute(nroDocumentoQuery, [value]);
+    if (nroDocumentoRows.length > 0) {
+      throw new Error('Ya existe un usuario registrado con este número de documento');
+    }
+  }),
   body('celular').notEmpty().withMessage('El campo celular es obligatorio').isLength({ max: 10 }).withMessage('El campo celular no puede exceder los 10 caracteres').isNumeric().withMessage('El campo celular debe contener solo dígitos'),
-  body('email').notEmpty().withMessage('El campo email es obligatorio').isEmail().withMessage('El formato del email es inválido').isLength({ max: 155 }).withMessage('El campo email no puede exceder los 155 caracteres'),
-  body('pass').notEmpty().withMessage('El campo pass es obligatorio').isStrongPassword().withMessage('La contraseña debe tener al menos 8 caracteres, una letra mayúscula, una minúscula, un número y un caracter especial'),
-  body('photo').notEmpty().withMessage('El campo photo es obligatorio').isLength({ max: 225 }).withMessage('El campo photo no puede exceder los 225 caracteres'),
-  body('isActivo').notEmpty().withMessage('El campo isActivo es obligatorio').isBoolean().withMessage('El campo isActivo debe ser booleano'),
-
-  async (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+  body('email').notEmpty().withMessage('El campo email es obligatorio').isEmail().withMessage('El formato del email es inválido').isLength({ max: 155 }).withMessage('El campo email no puede exceder los 155 caracteres').custom(async (value) => {
+    // Verificar si el email ya está registrado para otro usuario
+    const connection = req.app.locals.db;
+    const emailQuery = 'SELECT id FROM usuarios WHERE email = ?';
+    const [emailRows] = await connection.execute(emailQuery, [value]);
+    if (emailRows.length > 0) {
+      throw new Error('Ya existe un usuario registrado con este email');
     }
-
-    const { tipoDocumento_id, email } = req.body;
-
-    try {
-      // Validar que tipoDocumento_id exista en la tabla tiposdocumentos
-      const tipoDocumentoQuery = 'SELECT id FROM tiposdocumentos WHERE id = ?';
-      const [tipoDocumentoRows] = await connection.query(tipoDocumentoQuery, [tipoDocumento_id]);
-      if (tipoDocumentoRows.length === 0) {
-        return res.status(400).json({ error: 'El tipoDocumento_id especificado no existe' });
-      }
-
-      // Validar que el email no esté duplicado
-      const emailQuery = 'SELECT id FROM usuarios WHERE email = ?';
-      const [emailRows] = await connection.query(emailQuery, [email]);
-      if (emailRows.length > 0) {
-        return res.status(400).json({ error: 'Ya existe un usuario registrado con este email' });
-      }
-    } catch (error) {
-      return res.status(500).json({ error: 'Error al validar los datos' });
-    }
-
-    next();
-  }
+  }),
+  body('pass').notEmpty().withMessage('El campo pass es obligatorio').isLength({ max: 100 }).withMessage('El campo pass no puede exceder los 100 caracteres'),
+  body('photo').notEmpty().withMessage('El campo photo es obligatorio'),
+  body('isActivo').notEmpty().withMessage('El campo isActivo es obligatorio').isInt().withMessage('El campo isActivo debe ser un número entero válido')
 ];
+
 // Configuración de multer para la carga de archivos
 
 const storage = multer.diskStorage({
