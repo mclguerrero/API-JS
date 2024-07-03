@@ -1,5 +1,6 @@
+// jwtConfig.js
+
 module.exports = {
-    secret: 'your_jwt_secret_key', // Cambia esto por una clave secreta segura
-    expiresIn: '1h', // Tiempo de expiración del token
-  };
-  
+  secret: process.env.JWT_SECRET,
+  expiresIn: process.env.JWT_EXPIRES_IN,
+};

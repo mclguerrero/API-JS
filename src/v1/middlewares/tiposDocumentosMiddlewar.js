@@ -1,18 +1,21 @@
-const validarTipoDocumento = (req, res, next) => {
-    const { nombre } = req.body;
+const { body, validationResult } = require('express-validator');
+
+const validarTipoDocumento = [
+  body('nombre')
+    .notEmpty().withMessage('El nombre del tipo de documento es obligatorio')
+    .isString().withMessage('El nombre del tipo de documento debe ser una cadena')
+    .trim()
+    .isLength({ min: 1, max: 45 }).withMessage('El nombre del tipo de documento debe tener entre 1 y 45 caracteres'),
   
-    if (!nombre) {
-      return res.status(400).json({ error: 'El nombre del tipo de documento es obligatorio' });
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
     }
-  
-    if (typeof nombre !== 'string' || nombre.trim() === '') {
-      return res.status(400).json({ error: 'El nombre del tipo de documento debe ser una cadena no vacía' });
-    }
-  
     next();
-  };
-  
-  module.exports = {
-    validarTipoDocumento
-  };
-  
+  }
+];
+
+module.exports = {
+  validarTipoDocumento
+};

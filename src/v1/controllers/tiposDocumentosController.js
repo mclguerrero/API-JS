@@ -1,7 +1,13 @@
 // tipoDocumentoController.js
 
-const { connectToDatabase } = require('../../../db');
-const { obtenerTiposDocumentos, obtenerTipoDocumentoPorId, crearTipoDocumento, actualizarTipoDocumento, eliminarTipoDocumento } = require('../models/tiposDocumentosModel');
+const { connectToDatabase } = require('../../db');
+const { 
+  obtenerTiposDocumentos, 
+  obtenerTipoDocumentoPorId, 
+  crearTipoDocumento, 
+  actualizarTipoDocumento, 
+  eliminarTipoDocumento 
+} = require('../models/tiposDocumentosModel');
 
 // Obtener todos los tipos de documentos
 const obtenerTiposDocumentosController = async (req, res) => {

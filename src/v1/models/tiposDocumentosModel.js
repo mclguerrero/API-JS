@@ -1,6 +1,6 @@
 // tipoDocumentoModel.js
 
-const { connectToDatabase } = require('../../../db');
+const { connectToDatabase } = require('../../db');
 
 // Obtener todos los tipos de documentos
 const obtenerTiposDocumentos = async () => {

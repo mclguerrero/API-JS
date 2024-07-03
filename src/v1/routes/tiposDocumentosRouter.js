@@ -30,7 +30,7 @@ const { validarTipoDocumento } = require('../middlewares/tiposDocumentosMiddlewa
  * /api/v1/tiposdocumentos:
  *   get:
  *     tags:
- *       - TiposDocumentos
+ *       - Tipos Documentos
  *     summary: Obtener todos los tipos de documentos
  *     responses:
  *       200:
@@ -50,7 +50,7 @@ router.get('/tiposdocumentos', obtenerTiposDocumentosController);
  * /api/v1/tiposdocumentos/{id}:
  *   get:
  *     tags:
- *       - TiposDocumentos
+ *       - Tipos Documentos
  *     summary: Obtener un tipo de documento por ID
  *     parameters:
  *       - in: path
@@ -74,7 +74,7 @@ router.get('/tiposdocumentos/:id', obtenerTipoDocumentoPorIdController);
  * /api/v1/tiposdocumentos:
  *   post:
  *     tags:
- *       - TiposDocumentos
+ *       - Tipos Documentos
  *     summary: Crear un nuevo tipo de documento
  *     requestBody:
  *       required: true
@@ -98,7 +98,7 @@ router.post('/tiposdocumentos', validarTipoDocumento, crearTipoDocumentoControll
  * /api/v1/tiposdocumentos/{id}:
  *   put:
  *     tags:
- *       - TiposDocumentos
+ *       - Tipos Documentos
  *     summary: Actualizar un tipo de documento por ID
  *     parameters:
  *       - in: path
@@ -128,7 +128,7 @@ router.put('/tiposdocumentos/:id', validarTipoDocumento, actualizarTipoDocumento
  * /api/v1/tiposdocumentos/{id}:
  *   delete:
  *     tags:
- *       - TiposDocumentos
+ *       - Tipos Documentos
  *     summary: Eliminar un tipo de documento por ID
  *     parameters:
  *       - in: path

@@ -2,22 +2,25 @@
 
 const express = require('express');
 const bodyParser = require('body-parser');
-const { swaggerDocs } = require('./src/v1/swaggerConfig');
-const v1usuariosRouter = require('./src/v1/routes/usuariosRouter');
-const v1tiposDocumentosRouter = require('./src/v1/routes/tiposDocumentosRouter');
+const { swaggerDocs } = require('./v1/swaggerConfig');
+
+const v1authRouter = require('./v1/routes/authRouter');
+const v1fotosDePerfilRouter = require('./v1/routes/fotosDePerfilRouter');
+const v1usuariosRouter = require('./v1/routes/usuariosRouter');
+const v1tiposDocumentosRouter = require('./v1/routes/tiposDocumentosRouter');
 
 const { connectToDatabase } = require('./db'); // Importar la función de conexión
 const path = require('path');
 
 const app = express();
-const port = process.env.PORT || 4000; // Usar el puerto definido en las variables de entorno o 4000 por defecto
+const port = process.env.PORT || 6000; // Usar el puerto definido en las variables de entorno o 6000 por defecto
 
 // Middleware para parsear el body de las peticiones
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // Servir archivos estáticos de fotos de perfil
-app.use('/uploads/photosProfile', express.static(path.join(__dirname, 'uploads', 'photosProfile')));
+app.use('/uploads/photosProfile', express.static(path.join(__dirname, '../', 'uploads', 'photosProfile')));
 
 // Conectar a la base de datos al iniciar el servidor
 connectToDatabase()
@@ -26,6 +29,8 @@ connectToDatabase()
     app.locals.db = connection;
 
     // Usar las rutas de usuarios y tipos de documentos
+    app.use('/api/v1/', v1authRouter);
+    app.use('/api/v1/', v1fotosDePerfilRouter);
     app.use('/api/v1/', v1usuariosRouter);
     app.use('/api/v1/', v1tiposDocumentosRouter);
 
